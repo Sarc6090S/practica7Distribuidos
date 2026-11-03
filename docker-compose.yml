@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  nodo1:
+    build: .
+    ports:
+      - "8081:8080"
+    environment:
+      - PORT=8080
+      - NODO_ID=1
+      - MI_URL=http://nodo1:8080
+      - PARES=http://nodo2:8080|2,http://nodo3:8080|3
+
+  nodo2:
+    build: .
+    ports:
+      - "8082:8080"
+    environment:
+      - PORT=8080
+      - NODO_ID=2
+      - MI_URL=http://nodo2:8080
+      - PARES=http://nodo1:8080|1,http://nodo3:8080|3
+
+  nodo3:
+    build: .
+    ports:
+      - "8083:8080"
+    environment:
+      - PORT=8080
+      - NODO_ID=3
+      - MI_URL=http://nodo3:8080
+      - PARES=http://nodo1:8080|1,http://nodo2:8080|2

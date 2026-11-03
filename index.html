@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Practica 7 - PWA</title>
+<link rel="manifest" href="/manifest.json">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#3a2a2a;font-size:14px;line-height:1.5;padding:0 16px}
+a{color:#800020}
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:2px solid #800020;flex-wrap:wrap;gap:6px}
+.header h1{font-size:1.1rem;font-weight:700;color:#800020}
+.header .sub{font-size:.72rem;color:#8a7575}
+
+.seccion{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#8a7575;padding:12px 0 6px;display:flex;justify-content:space-between;align-items:center}
+
+.nodos-grid{display:flex;gap:8px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid #e0d6d6}
+.nodo-card{background:#f7f5f5;border:1px solid #e0d6d6;border-radius:8px;padding:9px 11px;flex:1 1 170px;min-width:0}
+.nodo-card.auto{border-left:3px solid #c77700}
+.nodo-card .top{display:flex;align-items:center;justify-content:space-between}
+.nodo-card .nombre{font-weight:600;font-size:.8rem;color:#1a0e0e}
+.tag-origen{font-size:.58rem;font-weight:600;padding:1px 5px;border-radius:3px;margin-left:5px}
+.tag-ini{background:rgba(128,0,32,.07);color:#800020}
+.tag-auto{background:rgba(199,119,0,.1);color:#c77700}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot.on{background:#2e7d32}
+.dot.off{background:#c62828}
+.dot.nuevo{background:#c77700}
+.nodo-card .url{font-size:.66rem;color:#8a7575;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.nodo-card .info{font-size:.7rem;color:#8a7575;margin-top:3px;font-variant-numeric:tabular-nums}
+.nodo-card .info b{color:#3a2a2a;font-weight:600}
+
+.log{padding:6px 0;border-bottom:1px solid #e0d6d6;max-height:85px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.log-e{font-size:.68rem;color:#8a7575;line-height:1.4}
+.log-e .t{opacity:.55;margin-right:5px}
+.log-e .ev-r{color:#2e7d32;font-weight:600}
+.log-e .ev-d{color:#800020;font-weight:600}
+.log-e .ev-s{color:#c77700;font-weight:600}
+
+.controles{display:flex;gap:8px;padding:10px 0;flex-wrap:wrap;align-items:flex-end;border-bottom:1px solid #e0d6d6}
+.campo{display:flex;flex-direction:column;gap:2px}
+.campo label{font-size:.66rem;font-weight:500;color:#8a7575;text-transform:uppercase;letter-spacing:.04em}
+.campo input,.campo select{background:#fff;border:1px solid #e0d6d6;border-radius:6px;padding:6px 9px;color:#1a0e0e;font-family:inherit;font-size:.8rem}
+.campo input:focus,.campo select:focus{outline:none;border-color:#800020}
+.btn{padding:6px 14px;border:none;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer}
+.btn-g{background:#800020;color:#fff}
+.btn-g:hover{background:#9e1b3c}
+.btn-o{background:rgba(128,0,32,.06);color:#800020;border:1px solid rgba(128,0,32,.15)}
+.btn-o:hover{background:rgba(128,0,32,.12)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:9px;padding:10px 0 24px}
+.card{background:#f7f5f5;border:1px solid #e0d6d6;border-radius:8px;overflow:hidden}
+.card.auto-scaled{border-left:3px solid #c77700}
+.card-h{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;border-bottom:1px solid #e0d6d6}
+.card-h .id{font-weight:600;font-size:.78rem;color:#1a0e0e}
+.tag{font-size:.6rem;font-weight:700;letter-spacing:.03em;padding:2px 6px;border-radius:3px}
+.t-local{background:rgba(46,125,50,.1);color:#2e7d32}
+.t-deleg{background:rgba(199,119,0,.1);color:#c77700}
+.t-proc{background:rgba(128,0,32,.07);color:#800020}
+.t-err{background:rgba(198,40,40,.1);color:#c62828}
+.t-fb{background:rgba(128,0,32,.07);color:#800020}
+.prog{height:2px;background:#e0d6d6}
+.prog .bar{height:100%;width:30%;background:#800020;border-radius:1px;animation:slide 1s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}
+.card-b{padding:9px 11px;display:flex;flex-direction:column;gap:5px}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:3px;font-size:.73rem}
+.meta .l{color:#8a7575}
+.meta .v{text-align:right;font-weight:500;color:#1a0e0e;font-variant-numeric:tabular-nums}
+.deleg-txt{font-size:.68rem;color:#c77700}
+.detalle{background:#fff;border-radius:5px;padding:7px;font-size:.68rem;line-height:1.5;color:#8a7575;max-height:130px;overflow-y:auto;white-space:pre-wrap;font-family:monospace}
+.card-f{padding:5px 11px;border-top:1px solid #e0d6d6;display:flex;justify-content:space-between;font-size:.68rem;color:#8a7575;font-variant-numeric:tabular-nums}
+.vacio{text-align:center;padding:40px 0;color:#8a7575;font-size:.85rem}
+.add-nodo{display:flex;gap:8px;padding:6px 0 10px;align-items:center;flex-wrap:wrap}
+.add-nodo input{flex:1;min-width:200px;background:#fff;border:1px solid #e0d6d6;border-radius:6px;padding:6px 9px;font-family:inherit;font-size:.78rem;color:#1a0e0e}
+.add-nodo input:focus{outline:none;border-color:#800020}
+.add-nodo input::placeholder{color:#baa}
+
+@media(max-width:500px){
+  .grid{grid-template-columns:1fr}
+  .nodos-grid{flex-direction:column}
+  .controles{flex-direction:column;align-items:stretch}
+  .campo input,.campo select{width:100%}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Practica 7 - PWA</h1>
+  <div class="sub">Sistemas Distribuidos &middot; ESCOM IPN &middot; 7CM1</div>
+</div>
+
+<div class="seccion">
+  <span>Nodos registrados</span>
+  <span id="cntNodos">--</span>
+</div>
+<div class="add-nodo">
+  <input id="inpNodoUrl" type="text" placeholder="URL del nodo (ej: https://nodo4-primos.onrender.com)">
+  <button class="btn btn-o" onclick="agregarNodo()">+ Agregar nodo</button>
+</div>
+<div class="nodos-grid" id="nodosGrid">
+  <div class="nodo-card">
+    <div class="top"><span class="nombre">Cargando...</span><span class="dot off"></span></div>
+    <div class="url">esperando conexion con servidores</div>
+  </div>
+</div>
+
+<div class="seccion"><span>Eventos</span> <span id="cntLog">0</span></div>
+<div class="log" id="logBox"></div>
+
+<div class="controles">
+  <div class="campo">
+    <label>Destino</label>
+    <select id="selDest" style="width:130px"><option value="">Cargando...</option></select>
+  </div>
+  <div class="campo">
+    <label>Limite</label>
+    <input id="inpLimite" type="number" value="50" min="2" style="width:80px">
+  </div>
+  <div class="campo">
+    <label>Hilos</label>
+    <input id="inpHilos" type="number" value="4" min="1" style="width:65px">
+  </div>
+  <button class="btn btn-g" onclick="enviarCalculo()">Calcular</button>
+  <button class="btn btn-o" onclick="enviar5x()">Enviar 5x</button>
+</div>
+
+<div class="seccion"><span>Solicitudes</span> <span id="cntSol">0</span></div>
+<div class="grid" id="calcGrid">
+  <div class="vacio">Sin solicitudes aun ---> envia un calculo</div>
+</div>
+
+<script>
+var servidores = [];
+var solicitudes = [];
+var logEntries = [];
+var solId = 0;
+var sigNodoId = 2;
+
+var urlBase = window.location.origin;
+
+function init() {
+  cargarNodos();
+  setInterval(cargarNodos, 5000);
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then(function(r) {
+      agregarLog('SW', 'ServiceWorker registrado');
+    }).catch(function(e) {
+      console.log('SW error:', e);
+    });
+  }
+}
+
+function pedirJson(url) {
+  return fetch(url, {cache: 'no-store'}).then(function(r) {
+    if (!r.ok) throw new Error('http ' + r.status);
+    return r.json();
+  }).then(function(data) {
+    if (!data || typeof data.nodo !== 'number') throw new Error('respuesta sin nodo');
+    return data;
+  });
+}
+
+function cargarNodos() {
+  var urls = servidores.length > 0 ? servidores.map(function(s){return s.url}) : [urlBase];
+  if (urls.indexOf(urlBase) === -1) urls.push(urlBase);
+  var nodosMap = {};
+
+  var consultas = urls.map(function(url) {
+    return pedirJson(url + '/api/nodos').then(function(data) {
+      nodosMap[data.nodo] = {
+        id: data.nodo, url: data.url || url, sem: data.semaforo,
+        cola: data.colaEspera, atendidos: data.atendidos,
+        online: true, origen: data.origen || 'inicial'
+      };
+
+      (data.pares || []).forEach(function(p) {
+        if (typeof p.id !== 'number') return;
+        if (!nodosMap[p.id]) {
+          nodosMap[p.id] = {
+            id: p.id, url: p.url,
+            sem: typeof p.semaforo === 'number' ? p.semaforo : -1,
+            cola: typeof p.colaEspera === 'number' ? p.colaEspera : -1,
+            atendidos: typeof p.atendidos === 'number' ? p.atendidos : -1,
+            online: p.online === true,
+            interno: p.interno === true,
+            origen: p.origen
+          };
+        } else if (p.origen === 'auto') {
+          nodosMap[p.id].origen = 'auto';
+        }
+      });
+    }).catch(function(e) {});
+  });
+
+  Promise.all(consultas).then(function() {
+    var pendientes = [];
+
+    Object.keys(nodosMap).forEach(function(k) {
+      var s = nodosMap[k];
+      if (s.online || s.interno) return;
+      pendientes.push(
+        pedirJson(s.url + '/api/estado').then(function(data) {
+          s.sem = data.semaforo;
+          s.cola = data.colaEspera;
+          s.atendidos = data.atendidos;
+          s.online = true;
+          if (data.origen) s.origen = data.origen;
+        }).catch(function(e) {})
+      );
+    });
+
+    return Promise.all(pendientes);
+  }).then(function() {
+    actualizarNodos(nodosMap);
+  });
+}
+
+function actualizarNodos(mapa) {
+  var arr = [];
+  Object.keys(mapa).forEach(function(k) { arr.push(mapa[k]); });
+  arr.sort(function(a, b) { return a.id - b.id; });
+
+  var cambio = arr.length !== servidores.length;
+  if (!cambio) {
+    for (var i = 0; i < arr.length; i++) {
+      if (!servidores[i] || servidores[i].id !== arr[i].id || servidores[i].url !== arr[i].url) {
+        cambio = true; break;
+      }
+    }
+  }
+
+  if (cambio) {
+    var viejos = servidores.map(function(s){return s.id});
+    arr.forEach(function(n) {
+      if (viejos.indexOf(n.id) === -1) {
+        agregarLog('REGISTRO', 'Nodo ' + n.id + ' descubierto <--- ' + n.url);
+      }
+    });
+  }
+
+  servidores = arr;
+  arr.forEach(function(n) { if (n.id >= sigNodoId) sigNodoId = n.id + 1; });
+  renderNodos();
+  renderSelector();
+}
+
+function renderNodos() {
+  var el = document.getElementById('nodosGrid');
+  var h = '';
+  servidores.forEach(function(s) {
+    var esManual = s.origen === 'manual' || s.origen === 'auto';
+    var tagTxt = s.origen === 'manual' ? 'MANUAL' : (s.origen === 'auto' ? 'AUTO' : 'INICIAL');
+    var tagCls = s.origen === 'inicial' ? 'tag-ini' : 'tag-auto';
+    h += '<div class="nodo-card' + (esManual ? ' auto' : '') + '">';
+    h += '<div class="top"><span class="nombre">Nodo ' + s.id;
+    h += ' <span class="tag-origen ' + tagCls + '">' + tagTxt + '</span>';
+    h += '</span><span class="dot ' + (s.online ? 'on' : 'off') + '"></span></div>';
+    h += '<div class="url">' + s.url + (s.interno ? ' (interno)' : '') + '</div>';
+    if (s.online && s.sem >= 0) {
+      h += '<div class="info">Sem: <b>' + s.sem + '</b> &middot; Cola: <b>' + s.cola + '</b> &middot; Atendidos: <b>' + s.atendidos + '</b></div>';
+    } else {
+      h += '<div class="info">esperando conexion...</div>';
+    }
+    h += '</div>';
+  });
+  el.innerHTML = h;
+  document.getElementById('cntNodos').textContent = servidores.length + ' nodos';
+}
+
+function renderSelector() {
+  var sel = document.getElementById('selDest');
+  var val = sel.value;
+  var h = '';
+  servidores.forEach(function(s) {
+    h += '<option value="' + s.url + '">Nodo ' + s.id + (s.origen === 'auto' ? ' (auto)' : '') + '</option>';
+  });
+  h += '<option value="todos">Todos</option>';
+  sel.innerHTML = h;
+  if (val) sel.value = val;
+}
+
+function enviarCalculo() {
+  var dest = document.getElementById('selDest').value;
+  var lim = parseInt(document.getElementById('inpLimite').value) || 50;
+  var hil = parseInt(document.getElementById('inpHilos').value) || 4;
+
+  if (dest === 'todos') {
+    servidores.forEach(function(s) { hacerPeticion(s.url, s.id, lim, hil); });
+  } else if (dest) {
+    var nodo = servidores.find(function(s){return s.url === dest});
+    hacerPeticion(dest, nodo ? nodo.id : '?', lim, hil);
+  }
+}
+
+function enviar5x() {
+  var dest = document.getElementById('selDest').value;
+  var lim = parseInt(document.getElementById('inpLimite').value) || 50;
+  var hil = parseInt(document.getElementById('inpHilos').value) || 4;
+  var url = dest === 'todos' ? (servidores.length > 0 ? servidores[0].url : urlBase) : dest;
+  var nodo = servidores.find(function(s){return s.url === url});
+  var nodoId = nodo ? nodo.id : 1;
+
+  var placeholders = [];
+  for (var i = 0; i < 5; i++) {
+    solId++;
+    var s = {
+      id: solId, nodoId: nodoId, limite: lim, hilos: hil,
+      estado: 'procesando', inicio: Date.now(),
+      tipo: '', detalle: '', suma: 0, totalPrimos: 0,
+      tiempo: 0, delegInfo: '', nodoProc: nodoId
+    };
+    solicitudes.unshift(s);
+    placeholders.push(s);
+    agregarLog('ENVIO', '#' + s.id + ' ---> Nodo ' + nodoId + ' (lote x5)');
+  }
+  renderSolicitudes();
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', url + '/api/lote', true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function() {
+    var arr;
+    try { arr = JSON.parse(xhr.responseText); } catch(e) { arr = []; }
+    var ahora = Date.now();
+    for (var j = 0; j < placeholders.length && j < arr.length; j++) {
+      procesarRespuesta(placeholders[j], arr[j], nodoId);
+      placeholders[j].tiempo = ((ahora - placeholders[j].inicio) / 1000).toFixed(2);
+    }
+    renderSolicitudes();
+    setTimeout(cargarNodos, 500);
+  };
+  xhr.onerror = function() {
+    for (var j = 0; j < placeholders.length; j++) {
+      placeholders[j].estado = 'error';
+      placeholders[j].detalle = 'No se pudo conectar';
+      placeholders[j].tiempo = ((Date.now() - placeholders[j].inicio) / 1000).toFixed(2);
+    }
+    renderSolicitudes();
+  };
+  xhr.send(JSON.stringify({limite: lim, hilos: hil, cantidad: 5}));
+}
+
+function agregarNodo() {
+  var inp = document.getElementById('inpNodoUrl');
+  var url = inp.value.trim();
+  if (!url) return;
+  if (!url.startsWith('http')) url = 'http://' + url;
+  if (url.endsWith('/')) url = url.slice(0, -1);
+
+  var nuevoId = sigNodoId;
+  servidores.forEach(function(s) { if (s.id >= nuevoId) nuevoId = s.id + 1; });
+  sigNodoId = nuevoId + 1;
+
+  agregarLog('REGISTRO', 'Agregando Nodo ' + nuevoId + ' ---> ' + url);
+
+  servidores.forEach(function(s) {
+    if (!s.online) return;
+    fetch(s.url + '/api/registrar', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({nodoId: nuevoId, url: url})
+    }).then(function(r){return r.json()}).then(function(d) {
+      agregarLog('REGISTRO', 'Nodo ' + s.id + ' <--- registro a Nodo ' + nuevoId);
+    }).catch(function(e) {});
+  });
+
+  fetch(url + '/api/registrar', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({nodoId: servidores.length > 0 ? servidores[0].id : 1, url: servidores.length > 0 ? servidores[0].url : urlBase})
+  }).catch(function(e) {});
+
+  var yaExiste = servidores.some(function(s){return s.url === url});
+  if (!yaExiste) {
+    servidores.push({id: nuevoId, url: url, sem: -1, cola: -1, atendidos: -1, online: false, origen: 'manual'});
+    renderNodos();
+    renderSelector();
+  }
+
+  inp.value = '';
+
+  setTimeout(cargarNodos, 1500);
+}
+
+function hacerPeticion(url, nodoId, lim, hil) {
+  solId++;
+  var s = {
+    id: solId, nodoId: nodoId, limite: lim, hilos: hil,
+    estado: 'procesando', inicio: Date.now(),
+    tipo: '', detalle: '', suma: 0, totalPrimos: 0,
+    tiempo: 0, delegInfo: '', nodoProc: nodoId
+  };
+  solicitudes.unshift(s);
+  renderSolicitudes();
+
+  agregarLog('ENVIO', '#' + s.id + ' ---> Nodo ' + nodoId + ' (limite=' + lim + ', hilos=' + hil + ')');
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url + '/api/primos?limite=' + lim + '&hilos=' + hil + '&_t=' + Date.now() + '' + Math.random(), true);
+  xhr.onload = function() {
+    var data;
+    try { data = JSON.parse(xhr.responseText); } catch(e) { data = {ok:false,error:'respuesta invalida'}; }
+    procesarRespuesta(s, data, nodoId);
+  };
+  xhr.onerror = function() {
+    s.tiempo = ((Date.now() - s.inicio) / 1000).toFixed(2);
+    s.estado = 'error';
+    s.detalle = 'No se pudo conectar';
+    agregarLog('ERROR', '#' + s.id + ' <--- conexion fallida con Nodo ' + nodoId);
+    renderSolicitudes();
+  };
+  xhr.send();
+}
+
+function procesarRespuesta(s, data, nodoId) {
+  s.tiempo = ((Date.now() - s.inicio) / 1000).toFixed(2);
+  if (data.ok === false) {
+    s.estado = 'error';
+    s.detalle = data.error || 'error desconocido';
+    agregarLog('ERROR', '#' + s.id + ' <--- error: ' + s.detalle);
+  } else {
+    s.suma = data.suma || 0;
+    s.totalPrimos = data.totalPrimos || 0;
+    s.detalle = data.detalle || '';
+    if (data.tipo === 'local') {
+      s.estado = 'local';
+      s.tipo = 'LOCAL';
+      s.nodoProc = data.nodo;
+      agregarLog('LOCAL', '#' + s.id + ' <--- Nodo ' + data.nodo + ' proceso local (' + s.tiempo + 's)');
+    } else if (data.autoEscalado) {
+      s.estado = 'autoescalado';
+      s.tipo = 'AUTO-ESCALADO';
+      s.nodoProc = data.procesadoPor || data.nodo;
+      s.delegInfo = 'Nodo ' + (data.delegadoPor || nodoId) + ' ---> creo nodo ---> Nodo ' + s.nodoProc + ' proceso';
+      agregarLog('ESCALAR', '#' + s.id + ' <--- Nodo ' + (data.delegadoPor||nodoId) + ' creo Nodo ' + s.nodoProc + ' (' + s.tiempo + 's)');
+    } else if (data.tipo === 'servicio' || data.delegadoPor) {
+      s.estado = 'delegado';
+      s.tipo = 'DELEGADO';
+      s.nodoProc = data.procesadoPor || data.nodo;
+      s.delegInfo = 'Nodo ' + (data.delegadoPor || nodoId) + ' (sem=0) ---> delego a Nodo ' + s.nodoProc;
+      agregarLog('DELEGAR', '#' + s.id + ' <--- Nodo ' + (data.delegadoPor||nodoId) + ' ---> Nodo ' + s.nodoProc + ' (' + s.tiempo + 's)');
+    } else if (data.tipo === 'fallback_local') {
+      s.estado = 'fallback';
+      s.tipo = 'FALLBACK';
+      s.nodoProc = data.nodo;
+      agregarLog('FALLBACK', '#' + s.id + ' <--- Nodo ' + data.nodo + ' fallback local (' + s.tiempo + 's)');
+    } else {
+      s.estado = 'local';
+      s.tipo = data.tipo || 'OK';
+      s.nodoProc = data.nodo;
+    }
+  }
+  renderSolicitudes();
+}
+
+function renderSolicitudes() {
+  var el = document.getElementById('calcGrid');
+  document.getElementById('cntSol').textContent = solicitudes.length;
+  if (solicitudes.length === 0) {
+    el.innerHTML = '<div class="vacio">Sin solicitudes aun ---> envia un calculo</div>';
+    return;
+  }
+  var h = '';
+  solicitudes.forEach(function(s) {
+    var clsCard = 'card';
+    var clsTag = 't-proc';
+    var tagTxt = 'PROCESANDO';
+
+    if (s.estado === 'local') { clsTag = 't-local'; tagTxt = 'LOCAL'; }
+    else if (s.estado === 'autoescalado') { clsTag = 't-deleg'; tagTxt = 'AUTO-ESCALADO'; clsCard += ' auto-scaled'; }
+    else if (s.estado === 'delegado') { clsTag = 't-deleg'; tagTxt = 'DELEGADO'; }
+    else if (s.estado === 'fallback') { clsTag = 't-fb'; tagTxt = 'FALLBACK'; clsCard += ' auto-scaled'; }
+    else if (s.estado === 'error') { clsTag = 't-err'; tagTxt = 'ERROR'; }
+
+    var ruta = '#' + s.id + ' ---> Nodo ' + s.nodoId;
+    if (s.nodoProc && s.nodoProc !== s.nodoId) ruta += ' ---> Nodo ' + s.nodoProc;
+
+    h += '<div class="' + clsCard + '">';
+    h += '<div class="card-h"><span class="id">' + ruta + '</span>';
+    h += '<span class="tag ' + clsTag + '">' + tagTxt + '</span></div>';
+
+    if (s.estado === 'procesando') {
+      h += '<div class="prog"><div class="bar"></div></div>';
+    }
+
+    h += '<div class="card-b">';
+    h += '<div class="meta">';
+    h += '<span class="l">Limite</span><span class="v">' + s.limite + '</span>';
+    h += '<span class="l">Hilos</span><span class="v">' + s.hilos + '</span>';
+    if (s.estado !== 'procesando' && s.estado !== 'error') {
+      h += '<span class="l">Recibio</span><span class="v">Nodo ' + s.nodoId + '</span>';
+      h += '<span class="l">Proceso</span><span class="v">Nodo ' + s.nodoProc + '</span>';
+      h += '<span class="l">Primos</span><span class="v">' + s.totalPrimos + '</span>';
+      h += '<span class="l">Suma</span><span class="v">' + s.suma + '</span>';
+    }
+    h += '</div>';
+
+    if (s.delegInfo) {
+      h += '<div class="deleg-txt">' + s.delegInfo + '</div>';
+    }
+
+    if (s.estado === 'procesando') {
+      h += '<div class="detalle" style="color:#800020">Esperando respuesta...</div>';
+    } else if (s.estado === 'error') {
+      h += '<div class="detalle" style="color:#c62828">' + esc(s.detalle) + '</div>';
+    } else if (s.detalle) {
+      h += '<div class="detalle">' + formatDetalle(s.detalle) + '</div>';
+    }
+
+    h += '</div>';
+
+    if (s.estado !== 'procesando') {
+      var footTxt = 'Nodo ' + s.nodoProc;
+      if (s.estado==='local') footTxt += ' local';
+      else if (s.estado==='autoescalado') footTxt = 'Nodo ' + s.nodoId + ' ---> creo Nodo ' + s.nodoProc;
+      else if (s.estado==='delegado') footTxt = 'Nodo ' + s.nodoId + ' ---> Nodo ' + s.nodoProc;
+      else if (s.estado==='fallback') footTxt += ' fallback (sem=0, espero turno)';
+      h += '<div class="card-f"><span>' + footTxt + '</span><span>' + s.tiempo + 's</span></div>';
+    } else {
+      var elapsed = ((Date.now() - s.inicio) / 1000).toFixed(0);
+      h += '<div class="card-f"><span>Procesando...</span><span>' + elapsed + 's</span></div>';
+    }
+
+    h += '</div>';
+  });
+  el.innerHTML = h;
+}
+
+function formatDetalle(txt) {
+  if (!txt) return '';
+  var s = txt.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+  return esc(s);
+}
+
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function agregarLog(tipo, msg) {
+  var ahora = new Date();
+  var h = ('0'+ahora.getHours()).slice(-2);
+  var m = ('0'+ahora.getMinutes()).slice(-2);
+  var sec = ('0'+ahora.getSeconds()).slice(-2);
+  var hora = h + ':' + m + ':' + sec;
+
+  var cls = 'ev-r';
+  if (tipo === 'DELEGAR' || tipo === 'ENVIO') cls = 'ev-d';
+  else if (tipo === 'FALLBACK' || tipo === 'ERROR') cls = 'ev-s';
+
+  logEntries.unshift({hora: hora, tipo: tipo, msg: msg, cls: cls});
+  if (logEntries.length > 50) logEntries.pop();
+  renderLog();
+}
+
+function renderLog() {
+  var el = document.getElementById('logBox');
+  document.getElementById('cntLog').textContent = logEntries.length;
+  var h = '';
+  logEntries.forEach(function(e) {
+    h += '<div class="log-e"><span class="t">' + e.hora + '</span><span class="' + e.cls + '">' + e.tipo + '</span> ' + esc(e.msg) + '</div>';
+  });
+  el.innerHTML = h;
+}
+
+init();
+</script>
+</body>
+</html>

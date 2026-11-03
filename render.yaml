@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: nodo1-primos
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: NODO_ID
+        value: 1
+      - key: MI_URL
+        value: https://nodo1-primos.onrender.com
+      - key: PARES
+        value: https://nodo2-primos.onrender.com|2,https://nodo3-primos.onrender.com|3
+
+  - type: web
+    name: nodo2-primos
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: NODO_ID
+        value: 2
+      - key: MI_URL
+        value: https://nodo2-primos.onrender.com
+      - key: PARES
+        value: https://nodo1-primos.onrender.com|1,https://nodo3-primos.onrender.com|3
+
+  - type: web
+    name: nodo3-primos
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: NODO_ID
+        value: 3
+      - key: MI_URL
+        value: https://nodo3-primos.onrender.com
+      - key: PARES
+        value: https://nodo1-primos.onrender.com|1,https://nodo2-primos.onrender.com|2
