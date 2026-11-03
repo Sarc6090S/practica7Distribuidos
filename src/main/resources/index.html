@@ -139,6 +139,8 @@ var solId = 0;
 var sigNodoId = 2;
 
 var urlBase = window.location.origin;
+var topeNodos = -1;
+var autoCreados = 0;
 
 function init() {
   cargarNodos();
@@ -174,6 +176,11 @@ function cargarNodos() {
         cola: data.colaEspera, atendidos: data.atendidos,
         online: true, origen: data.origen || 'inicial'
       };
+
+      if (typeof data.maxNodos === 'number') {
+        topeNodos = data.maxNodos;
+        autoCreados = data.nodosCreados;
+      }
 
       (data.pares || []).forEach(function(p) {
         if (typeof p.id !== 'number') return;
@@ -266,7 +273,12 @@ function renderNodos() {
     h += '</div>';
   });
   el.innerHTML = h;
-  document.getElementById('cntNodos').textContent = servidores.length + ' nodos';
+  var txt = servidores.length + ' nodos';
+  if (topeNodos >= 0) {
+    txt += ' · auto ' + autoCreados + '/' + topeNodos;
+    if (autoCreados >= topeNodos) txt += ' (tope)';
+  }
+  document.getElementById('cntNodos').textContent = txt;
 }
 
 function renderSelector() {

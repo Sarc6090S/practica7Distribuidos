@@ -1,4 +1,4 @@
-var CACHE = 'primos-pwa-v4';
+var CACHE = 'primos-pwa-v5';
 var archivos = [
   '/',
   '/index.html',

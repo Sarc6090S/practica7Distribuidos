@@ -118,6 +118,8 @@ class Despachador implements Runnable {
     String miUrl;
     static AtomicInteger puertoAuto = new AtomicInteger(9000);
     static AtomicInteger idAuto = new AtomicInteger(100);
+    static AtomicInteger nodosCreados = new AtomicInteger(0);
+    static int maxNodos = 4;
 
     Despachador(Cola cola, int nodoId, Semaphore semaforo, CopyOnWriteArrayList<DatosPar> pares, AtomicInteger rrIndex, String miUrl) {
         this.cola = cola;
@@ -198,7 +200,7 @@ class Despachador implements Runnable {
         }
     }
 
-    String delegarAPar(int boundary, int threadss, String t) {
+    String intentarPares(int boundary, int threadss, String t) {
         int total = pares.size();
         for (int i = 0; i < total; i++) {
             int idx = rrIndex.getAndIncrement() % total;
@@ -222,9 +224,25 @@ class Despachador implements Runnable {
                 }
             }
         }
+        return null;
+    }
+
+    String delegarAPar(int boundary, int threadss, String t) {
+        String delegado = intentarPares(boundary, threadss, t);
+        if (delegado != null) return delegado;
 
         System.out.println(t + " *** Ningun par disponible ---> intentando crear nodo nuevo ***");
         DatosPar nuevo = spawnNodo(t);
+
+        if (nuevo == null) {
+            for (int espera = 0; espera < 10 && pares.isEmpty(); espera++) {
+                try { Thread.sleep(300); } catch (InterruptedException e) { break; }
+            }
+            System.out.println(t + " ---> Reintentando con los nodos que ya existen (" + pares.size() + ")");
+            delegado = intentarPares(boundary, threadss, t);
+            if (delegado != null) return delegado;
+        }
+
         if (nuevo != null) {
             System.out.println(t + " ---> Nodo " + nuevo.id + " creado en " + nuevo.url);
             try {
@@ -254,6 +272,12 @@ class Despachador implements Runnable {
     }
 
     DatosPar spawnNodo(String t) {
+        if (nodosCreados.incrementAndGet() > maxNodos) {
+            nodosCreados.decrementAndGet();
+            System.out.println(t + " >>> TOPE DE NODOS ALCANZADO (" + maxNodos + ") ---> no creo mas");
+            return null;
+        }
+
         int nuevoId = idAuto.getAndIncrement();
         int nuevoPuerto = 0;
 
@@ -268,12 +292,14 @@ class Despachador implements Runnable {
                 System.out.println(t + " >>> Puerto " + candidato + " ocupado ---> probando el siguiente");
             } catch (Exception e) {
                 System.out.println(t + " >>> SPAWN ERROR: " + e.getClass().getName() + ": " + e.getMessage());
+                nodosCreados.decrementAndGet();
                 return null;
             }
         }
 
         if (nuevoPuerto == 0) {
             System.out.println(t + " >>> SPAWN ERROR: no encontre ningun puerto libre");
+            nodosCreados.decrementAndGet();
             return null;
         }
 
@@ -408,6 +434,7 @@ public class NodoWeb {
 
         Despachador.puertoAuto.set(puerto + 1);
         Despachador.idAuto.set(maxId + 1);
+        Despachador.maxNodos = Integer.parseInt(getEnvOrArg(args, 4, "MAX_NODOS", "4"));
 
         semaforo = new Semaphore(1, true);
         cola = new Cola("NODO " + nodoId);
@@ -423,6 +450,7 @@ public class NodoWeb {
         System.out.println("[NODO " + nodoId + "] URL propia: " + (miUrl.isEmpty() ? "(no definida)" : miUrl));
         System.out.println("[NODO " + nodoId + "] Semaforo: 1 recurso");
         System.out.println("[NODO " + nodoId + "] Cola FIFO + Despachador");
+        System.out.println("[NODO " + nodoId + "] Tope de nodos auto-escalados: " + Despachador.maxNodos);
         System.out.println("[NODO " + nodoId + "] Pares iniciales (" + pares.size() + "):");
         for (DatosPar par : pares)
             System.out.println("    ---> NODO " + par.id + ": " + par.url);
@@ -565,6 +593,8 @@ public class NodoWeb {
             json.append(",\"semaforo\":").append(semaforo.availablePermits());
             json.append(",\"colaEspera\":").append(cola.enEspera());
             json.append(",\"atendidos\":").append(cola.totalAtendidos());
+            json.append(",\"maxNodos\":").append(Despachador.maxNodos);
+            json.append(",\"nodosCreados\":").append(Despachador.nodosCreados.get());
             json.append(",\"pares\":[");
 
             for (int i = 0; i < pares.size(); i++) {

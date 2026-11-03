@@ -9,6 +9,8 @@ services:
         value: 8080
       - key: NODO_ID
         value: 1
+      - key: MAX_NODOS
+        value: 4
       - key: MI_URL
         value: https://nodo1-primos.onrender.com
       - key: PARES
@@ -24,6 +26,8 @@ services:
         value: 8080
       - key: NODO_ID
         value: 2
+      - key: MAX_NODOS
+        value: 4
       - key: MI_URL
         value: https://nodo2-primos.onrender.com
       - key: PARES
@@ -39,6 +43,8 @@ services:
         value: 8080
       - key: NODO_ID
         value: 3
+      - key: MAX_NODOS
+        value: 4
       - key: MI_URL
         value: https://nodo3-primos.onrender.com
       - key: PARES
